@@ -132,13 +132,11 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 	int x;
 	int _ndevs = ndevs;
 
-#if LOG_EXTRA
-	printf("\n\"%s\" ndevs %d: sub_stripes %d dev_stripes %d devs_max %d "\
+	printf("\n%s _ndevs %d: sub_stripes %d dev_stripes %d devs_max %d "\
 		"devs_min %d tolerated_failures %d devs_increment %d ncopies %d\n",
-		btrfs_raid_type_names[index], ndevs, sub_stripes,
+		btrfs_raid_type_names[index], _ndevs, sub_stripes,
 		dev_stripes, devs_max, devs_min, tolerated_failures,
 		devs_increment, ncopies);
-#endif
 
 #if APPLY_FIX
 	if (ndevs > (devs_increment * sub_stripes)) {
@@ -149,8 +147,8 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 #endif
 
  	if (ndevs < devs_min) {
-	//	printf("RAID FAILED1: ndevs %d < devs_min %d\n",
-	//			ndevs, devs_min);
+		printf("\t-- FAILED: ndevs %d < devs_min %d\n",
+				ndevs, devs_min);
 		return;
 	}
 
@@ -158,8 +156,8 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 #if APPLY_FIX
 		missing_mirror_dev = (devs_increment * sub_stripes) - ndevs;
 #else
-	//	printf("RAID FAILED2: ndevs %d < devs_increment * sub_stripes %d\n",
-	//			ndevs, devs_increment * sub_stripes);
+		printf("\t-- FAILED: ndevs %d < devs_increment * sub_stripes %d\n",
+				ndevs, devs_increment * sub_stripes);
 		return;
 #endif
 	}
@@ -198,9 +196,9 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 
 	num_bytes = stripe_size * data_stripes;
 
-	printf("%s\t_ndevs %d: ndevs %d num_stripes %d data_stripes %d num_bytes %d missing_mirror_dev %d\n",
-		btrfs_raid_type_names[index], _ndevs,
-		ndevs, num_stripes, data_stripes, num_bytes, missing_mirror_dev);
+	printf("\tndevs %d num_stripes %d data_stripes %d num_bytes %d missing_mirror_dev %d degraded_devs_mini %d\n",
+		ndevs, num_stripes, data_stripes, num_bytes, missing_mirror_dev,
+		devs_min - tolerated_failures);
 }
 
 int main()
