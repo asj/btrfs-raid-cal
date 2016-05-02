@@ -1,0 +1,44 @@
+		R10 R1 DUP R0 Sn R5 R6
+.sub_stripes	= 2, 1, 1, 1, 1, 1, 1
+.dev_stripes	= 1, 1, 2, 1, 1, 1, 1
+.devs_max	= 0, 2, 1, 0, 1, 0, 0
+.devs_min	= 4, 1, 1, 2, 1, 2, 3
+.tolerated_fails= 1, 1, 0, 0, 0, 1, 2
+.devs_increment	= 2, 2, 1, 1, 1, 1, 1
+.ncopies	= 2, 2, 2, 1, 1, 2, 3
+
+[devs_increment * sub_stripes]
+x1		= 4, 2, 1, 1, 1, 1, 1
+
+[ndevs = 9]
+ndevs		= 9, 9, 9, 9, 9, 9, 9
+ndevs'		= 8, 2, 1, 9, 9, 9, 9
+num_stripes	= 8, 2, 2, 9, 1, 9, 9
+data_stripes	= 4, 1, 1, 9, 1, 8, 7
+nstripes/ncopies=
+
+[ndevs = tolerated_fails + devs_min]
+ndevs		= 5, 2, 1, 2, 1, 3, 5
+ndevs'		= 4, 2, 1, 2, 1, 3, 5
+num_stripes	= 4, 2, 2, 2, 1, 3, 5
+data_stripes	= 2, 1, 1, 2, 1, 1, 1
+nstripes/ncopies= 
+
+[ndevs = devs_min]
+ndevs		= 3, 1, 1, 2, 1, 2, 3
+ndevs'		= 2, 0, 1, 2, 1, 2, 3
+num_stripes	= -, -, 2, 2, 1, 2, 3
+data_stripes	= -, -, 1, 2, 1, 1, 1
+nstripes/ncopies= 
+
+[ndevs = devs_min w fix]
+ndevs		= 3, 1, 1, 2, 1, 2, 3
+ndevs'		= 3, 1, 1, 2, 1, 2, 3
+num_stripes	= 3, 1, 2, 2, 1, 2, 3
+data_stripes	= ?, 1, 1, 2, 1, 1, 1
+nstripes/ncopies= 
+
+[ndevs' = ndevs - ndevs % devs_increment]
+[num_stripes = ndevs' * dev_stripes]
+[data_stripes = num_stripes / ncopies]
+[missing_mirror_dev = x1 - ndevs']
