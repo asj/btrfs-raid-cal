@@ -4,8 +4,8 @@
 
 #define u64 unsigned long long
 
-#define FIX 0
-#define LOG1 0
+#define APPLY_FIX 0
+#define LOG_EXTRA 0
 
 struct btrfs_raid_attr {
 	int sub_stripes;	/* sub_stripes info for map */
@@ -33,7 +33,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
 		.sub_stripes	= 2,
 		.dev_stripes	= 1,
 		.devs_max	= 0,	/* 0 == as many as possible */
-#if FIX
+#if APPLY_FIX
 		.devs_min	= 3,
 #else
 		.devs_min	= 4,
@@ -46,7 +46,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
 		.sub_stripes	= 1,
 		.dev_stripes	= 1,
 		.devs_max	= 2,
-#if FIX 
+#if APPLY_FIX
 		.devs_min	= 1,
 #else
 		.devs_min	= 2,
@@ -131,23 +131,16 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 	int missing_mirror_dev = 0;
 	int x;
 	int _ndevs = ndevs;
-#if 0
-#if LOG1
-	printf("\nASJ \"%s\" ndevs %d: sub_stripes %d dev_stripes %d devs_max %d "\
-		"devs_min %d tolerated_failures %d devs_increment %d ncopies %d\n",
-		btrfs_raid_type_names[index], ndevs, sub_stripes,
-		dev_stripes, devs_max, devs_min, tolerated_failures,
-		devs_increment, ncopies);
-#else
+
+#if LOG_EXTRA
 	printf("\n\"%s\" ndevs %d: sub_stripes %d dev_stripes %d devs_max %d "\
 		"devs_min %d tolerated_failures %d devs_increment %d ncopies %d\n",
 		btrfs_raid_type_names[index], ndevs, sub_stripes,
 		dev_stripes, devs_max, devs_min, tolerated_failures,
 		devs_increment, ncopies);
 #endif
-#endif
 
-#if FIX
+#if APPLY_FIX
 	if (ndevs > (devs_increment * sub_stripes)) {
 		ndevs -= ndevs % devs_increment;
 	}
@@ -156,16 +149,18 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 #endif
 
  	if (ndevs < devs_min) {
-		printf("RAID FAILED1: ndevs %d < devs_min %d\n",
-				ndevs, devs_min);
+	//	printf("RAID FAILED1: ndevs %d < devs_min %d\n",
+	//			ndevs, devs_min);
+		return;
 	}
 
 	if (ndevs < (devs_increment * sub_stripes)) {
-#if FIX
+#if APPLY_FIX
 		missing_mirror_dev = (devs_increment * sub_stripes) - ndevs;
 #else
-		printf("RAID FAILED2: ndevs %d < devs_increment * sub_stripes %d\n",
-				ndevs, devs_increment * sub_stripes);
+	//	printf("RAID FAILED2: ndevs %d < devs_increment * sub_stripes %d\n",
+	//			ndevs, devs_increment * sub_stripes);
+		return;
 #endif
 	}
 
@@ -194,7 +189,7 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 	for (i = 0; i < ndevs; ++i) {
 		for (j = 0; j < dev_stripes; ++j) {
 			int s = i * dev_stripes + j;
-#if LOG1
+#if LOG_EXTRA
 			printf("dev %d dev_stripes %d s %d (phy_offset = dev_stripes x stripe_size) %llu\n",
 				i, j, s, j * stripe_size);
 #endif
@@ -210,48 +205,13 @@ void __btrfs_alloc_chunk(int index, int ndevs)
 
 int main()
 {
-	int i;
-	int ndevs_raid1 = 2;
-	int ndevs_raid1_min = 1;
+	int i, j;
 
-	int ndevs_raid10 = 4;
-	int ndevs_raid10_min = 3;
-
-	int ndevs_raid5 = 3;
-	int ndevs_raid5_min = 2;
-
-#if 1
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, ndevs_raid1_min);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, ndevs_raid1);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, 3);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, 4);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, 5);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, 6);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID1, 7);
-
-printf("\n");
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID10, ndevs_raid10_min);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID10, ndevs_raid10);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID10, 5);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID10, 6);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID10, 7);
-
-printf("\n");
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID5, ndevs_raid5_min);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID5, ndevs_raid5);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID5, 4);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID5, 5);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID5, 6);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID5, 7);
-
-	__btrfs_alloc_chunk(BTRFS_RAID_DUP, 1);
-	__btrfs_alloc_chunk(BTRFS_RAID_RAID0, 1);
-	__btrfs_alloc_chunk(BTRFS_RAID_SINGLE, 1);
-
-#else
 	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
-		__btrfs_alloc_chunk(i, 1);
+		for (j = 1; j < 9; j++)
+			__btrfs_alloc_chunk(i, j);
+		printf("\n");
 	}
-#endif
+
 	return 0;
 }
